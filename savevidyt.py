@@ -1,15 +1,26 @@
 from pytube import YouTube
 
-def download_youtube_video(url, output_path='.'):
+def get_available_resolutions(url):
+    yt = YouTube(url)
+    streams = yt.streams.filter(file_extension='mp4').order_by('resolution')
+    available_resolutions = [stream.resolution for stream in streams]
+    return available_resolutions, yt
+
+def savevidyt(url, resolution, output_path='.'):
     try:
-        # Membuat objek YouTube
-        yt = YouTube(url)
+        # Mendapatkan resolusi yang tersedia dan objek YouTube
+        available_resolutions, yt = get_available_resolutions(url)
         
-        # Mengambil stream video dengan format mp4 dan resolusi tertinggi
-        video_stream = yt.streams.filter(file_extension='mp4').get_highest_resolution()
+        # Memeriksa apakah resolusi yang diminta tersedia
+        if resolution not in available_resolutions:
+            print(f"Resolution {resolution} not available. Available resolutions are: {', '.join(available_resolutions)}")
+            return
+        
+        # Mengambil stream video dengan format mp4 dan resolusi yang dipilih
+        video_stream = yt.streams.filter(file_extension='mp4', resolution=resolution).first()
         
         # Mengunduh video ke path yang ditentukan
-        print(f"Downloading: {yt.title}")
+        print(f"Downloading: {yt.title} at resolution {resolution}")
         video_stream.download(output_path)
         
         print("Download completed!")
@@ -18,8 +29,18 @@ def download_youtube_video(url, output_path='.'):
 
 if __name__ == "__main__":
     # Masukkan URL video YouTube yang ingin diunduh
-    print("Download Video Youtube")
     video_url = input("Enter YouTube video URL: ")
+    
+    # Mendapatkan resolusi yang tersedia
+    available_resolutions, _ = get_available_resolutions(video_url)
+    
+    # Menampilkan opsi resolusi kepada pengguna
+    print("Available resolutions:")
+    for res in available_resolutions:
+        print(f"- {res}")
+    
+    # Memilih resolusi dari pengguna
+    selected_resolution = input("Enter the desired resolution (e.g., 360p, 480p, 720p, 1080p): ")
     
     # Path folder tempat video akan diunduh
     output_folder = input("Enter download directory (default is current directory): ")
@@ -28,4 +49,5 @@ if __name__ == "__main__":
     if not output_folder.strip():
         output_folder = '.'
     
-    download_youtube_video(video_url, output_folder)
+    savevidyt(video_url, selected_resolution, output_folder)
+
